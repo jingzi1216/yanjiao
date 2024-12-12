@@ -126,11 +126,11 @@ hide_github_icon = """
     footer {visibility: hidden;}    /* 隐藏页脚 */
     </style>
 """
-st.markdown(hide_github_icon, unsafe_allow_html=True)
+
 st.set_page_config(page_title="粘度优化工具", layout="wide")
 st.title("粘度优化工具")
 st.markdown("""<style>div[data-testid="stSidebar"] {background-color: #f0f2f6;}</style>""", unsafe_allow_html=True)
-
+st.markdown(hide_github_icon, unsafe_allow_html=True)
 st.sidebar.header("🔧 输入参数")
 乳液A = st.sidebar.number_input("乳液A ", value=2066)
 乳液A粘度 = st.sidebar.number_input("乳液A粘度", value=3180)
