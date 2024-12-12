@@ -120,7 +120,7 @@ def optimize(user_input_values, expected_viscosity):
 # Streamlit 界面
 # Streamlit 界面
 st.set_page_config(page_title="粘度优化工具", layout="wide")
-st.title("🌟 粘度优化工具")
+st.title("粘度优化工具")
 st.markdown("""<style>div[data-testid="stSidebar"] {background-color: #f0f2f6;}</style>""", unsafe_allow_html=True)
 
 st.sidebar.header("🔧 输入参数")
