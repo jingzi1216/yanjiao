@@ -119,6 +119,14 @@ def optimize(user_input_values, expected_viscosity):
 
 # Streamlit 界面
 # Streamlit 界面
+# 隐藏右上角 GitHub 标志以及 Streamlit 菜单和页脚
+hide_github_icon = """
+    <style>
+    #MainMenu {visibility: hidden;}  /* 隐藏 Streamlit 菜单 */
+    footer {visibility: hidden;}    /* 隐藏页脚 */
+    </style>
+"""
+st.markdown(hide_github_icon, unsafe_allow_html=True)
 st.set_page_config(page_title="粘度优化工具", layout="wide")
 st.title("粘度优化工具")
 st.markdown("""<style>div[data-testid="stSidebar"] {background-color: #f0f2f6;}</style>""", unsafe_allow_html=True)
