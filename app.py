@@ -140,7 +140,7 @@ st.sidebar.header("🔧 输入参数")
 乳液F固含量 = st.sidebar.number_input("乳液F固含量", value=0.603)
 水溶液E = st.sidebar.number_input("水溶液E ", value=210)
 水溶液F = st.sidebar.number_input("水溶液F ", value=250)
-水 = st.sidebar.number_input("水 ", value=75)
+水 = st.sidebar.number_input("水 ", value=75.6)
 其它 = st.sidebar.number_input("其它 ", value=112.24)
 预期黏度 = st.sidebar.number_input("预期黏度", value=5000)
 
