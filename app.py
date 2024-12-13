@@ -119,18 +119,22 @@ def optimize(user_input_values, expected_viscosity):
 
 # Streamlit 界面
 # Streamlit 界面
-# 隐藏右上角 GitHub 标志以及 Streamlit 菜单和页脚
-hide_github_icon = """
+# 隐藏右上角的 GitHub 图标和其他 Streamlit 默认元素
+hide_streamlit_style = """
     <style>
-    #MainMenu {visibility: hidden;}  /* 隐藏 Streamlit 菜单 */
-    footer {visibility: hidden;}    /* 隐藏页脚 */
+    /* 隐藏右上角 GitHub 图标 */
+    #MainMenu {visibility: hidden;}
+    /* 隐藏页脚 */
+    footer {visibility: hidden;}
+    /* 隐藏顶部的 Streamlit 菜单 */
+    header {visibility: hidden;}
     </style>
 """
 
 st.set_page_config(page_title="粘度优化工具", layout="wide")
 st.title("粘度优化工具")
 st.markdown("""<style>div[data-testid="stSidebar"] {background-color: #f0f2f6;}</style>""", unsafe_allow_html=True)
-st.markdown(hide_github_icon, unsafe_allow_html=True)
+st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 st.sidebar.header("🔧 输入参数")
 乳液A = st.sidebar.number_input("乳液A ", value=2066)
 乳液A粘度 = st.sidebar.number_input("乳液A粘度", value=3180)
