@@ -153,6 +153,8 @@ if st.sidebar.button("🚀 确认"):
 
     try:
         result = run_pso(user_input_values, 预期黏度)
+        # 完成后清空进度条
+        progress_bar.empty()
         st.subheader("✨ 优化结果")
         st.success("优化成功！以下是结果：")
         col1, col2 = st.columns(2)
