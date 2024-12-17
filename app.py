@@ -1,5 +1,5 @@
 import streamlit as st
-
+import time
 import pandas as pd
 import joblib
 from pyswarm import pso  # 使用 PySwarm 库中的 PSO 实现
@@ -143,9 +143,16 @@ if st.sidebar.button("🚀 确认"):
         '乳液F': 乳液F, '乳液F粘度': 乳液F粘度, '乳液F固含量': 乳液F固含量,
         '水溶液E': 水溶液E, '水溶液F': 水溶液F, '水': 水, '其它': 其它
     }
+    st.subheader("⏳ 正在优化，请稍候...")
+    progress_bar = st.progress(0)  # 初始化进度条
+
+    # 模拟运行状态：逐步更新进度条
+    for i in range(1, 101):
+        time.sleep(0.03)  # 模拟运行时间
+        progress_bar.progress(i)  # 更新进度
 
     try:
-        result = optimize(user_input_values, 预期黏度)
+        result = run_pso(user_input_values, 预期黏度)
         st.subheader("✨ 优化结果")
         st.success("优化成功！以下是结果：")
         col1, col2 = st.columns(2)
@@ -163,8 +170,9 @@ if st.sidebar.button("🚀 确认"):
 
             st.metric("相对误差 (%)", f"{result['相对误差 (%)']:.2f}%")
 
-        st.write(f"### 总计: **<span style='font-size:1.2em'>{result['总计'][0]:.2f} g</span>**", unsafe_allow_html=True)
+        st.write(f"### 总计: **<span style='font-size:1.2em'>{result['总计']:.2f} g</span>**", unsafe_allow_html=True)
 
     except ValueError as e:
+        progress_bar.empty()
         st.error(str(e))
 
