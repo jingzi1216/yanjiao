@@ -1,121 +1,110 @@
 import streamlit as st
+
 import pandas as pd
 import joblib
-from scipy.optimize import minimize
-
+from pyswarm import pso  # 使用 PySwarm 库中的 PSO 实现
 
 # 加载模型
 model_v = joblib.load('viscosity.pkl')
 model_s = joblib.load('solids.pkl')
 
-# 优化函数
-def optimization_function(params, expected_viscosity):
+# 定义目标函数
+def optimization_function(individual, *args):
     """
-    params[0]: 水
-    params[1]: 水溶液E
+    PSO 的目标函数
+    individual[0]: 水
+    individual[1]: 水溶液E
     """
-    # 替换 '水' 和 '水溶液E' 的值
-    modified_features = user_input.copy()
-    modified_features['水'] = params[0]
-    modified_features['水溶液E'] = params[1]
+    expected_viscosity, user_input_values = args
+
+    # 获取水和水溶液E的值
+    water, solution_e = individual
+
+    # 修改用户输入
+    user_input = pd.DataFrame([user_input_values])
+    user_input['水'] = water
+    user_input['水溶液E'] = solution_e
 
     # 特征选择
-    selected_features_v = modified_features[['乳液A粘度', '乳液F粘度', '水溶液E', '水', '乳液A固含量', '乳液F固含量']]
-    selected_features_s = modified_features[['乳液A固含量', '乳液F固含量', '水', '乳液A粘度', '水溶液E', '乳液F粘度']]
+    selected_features_v = user_input[['乳液A粘度', '乳液F粘度', '水溶液E', '水', '乳液A固含量', '乳液F固含量']]
+    selected_features_s = user_input[['乳液A固含量', '乳液F固含量', '水', '乳液A粘度', '水溶液E', '乳液F粘度']]
 
-
-    # 预测黏度和理论固含量
+    # 预测黏度和固含量
     predicted_viscosity = model_v.predict(selected_features_v)[0]
     predicted_solids = model_s.predict(selected_features_s)[0]
 
-    # 逐项计算罚项
+    # 计算惩罚项
     viscosity_penalty = max(0, 4500 - predicted_viscosity) + max(0, predicted_viscosity - 5500)
     viscosity_target_deviation = abs(predicted_viscosity - expected_viscosity)
     solids_penalty = max(0, 0.50 - predicted_solids) + max(0, predicted_solids - 0.54)
 
-    # 总目标函数值
-    return viscosity_penalty + solids_penalty + viscosity_target_deviation
-
-
-# 在 optimize 函数中保持一致
-def optimize(user_input_values, expected_viscosity):
-    global user_input
-    user_input = pd.DataFrame([user_input_values])
-
-    user_input_total = (
-        user_input['乳液A'] +
-        user_input['乳液F'] +
-        user_input['水'] +
-        user_input['水溶液E'] +
-        user_input['其它']
+    # 确保总量约束满足
+    input_total = (
+        user_input_values['乳液A'] + user_input_values['乳液F'] + user_input_values['水'] +
+        user_input_values['水溶液E'] + user_input_values['水溶液F'] + user_input_values['其它']
     )
+    total = (
+        user_input_values['乳液A'] + user_input_values['乳液F'] + water + solution_e +
+        user_input_values['水溶液F'] + user_input_values['其它']
+    )
+    total_penalty = max(0, input_total - total)  # 惩罚总量小于输入总量的情况
 
-    # 设置变量范围
-    # 初始值和约束
-    water_bounds = (10, 100)  # 替换为实际值
-    solution_e_bounds = (100, 300)  # 替换为实际值
-    initial_guess = [50, 200]
+    # 返回目标函数值
+    return viscosity_penalty + solids_penalty + viscosity_target_deviation + total_penalty
 
+# 粒子群算法求解
+def run_pso(user_input_values, expected_viscosity):
+    # 设置变量边界：水和水溶液E的范围
+    lb = [10, 100]  # 下界：水和水溶液E
+    ub = [100, 300]  # 上界：水和水溶液E
 
-    def total_constraint(params):
-        water, solution_e = params
-        total = (
-            user_input['乳液A'] +
-            user_input['乳液F'] +
-            water +
-            solution_e +
-            user_input['其它']
-        )
-        return total - user_input_total
-
-    constraints = {"type": "ineq", "fun": total_constraint}
-
-    result = minimize(
+    # 运行 PSO 算法
+    optimal_solution, fopt = pso(
         optimization_function,
-        initial_guess,
-        args=(expected_viscosity,),
-        bounds=[water_bounds, solution_e_bounds],
-        constraints=constraints,
+        lb,
+        ub,
+        args=(expected_viscosity, user_input_values),
+        swarmsize=50,  # 粒子群的大小
+        maxiter=30     # 最大迭代次数
     )
 
-    if result.success:
-        optimized_water, optimized_solution_e = result.x
+    # 获取优化结果
+    water, solution_e = optimal_solution
 
-        user_input['水'] = optimized_water
-        user_input['水溶液E'] = optimized_solution_e
+    # 特征选择
+    selected_features_v = pd.DataFrame([user_input_values]).assign(水=water, 水溶液E=solution_e)[
+        ['乳液A粘度', '乳液F粘度', '水溶液E', '水', '乳液A固含量', '乳液F固含量']]
+    selected_features_s = pd.DataFrame([user_input_values]).assign(水=water, 水溶液E=solution_e)[
+        ['乳液A固含量', '乳液F固含量', '水', '乳液A粘度', '水溶液E', '乳液F粘度']]
 
-        selected_features_v = user_input[['乳液A粘度', '乳液F粘度', '水溶液E', '水', '乳液A固含量', '乳液F固含量']]
-        selected_features_s = user_input[['乳液A固含量', '乳液F固含量', '水', '乳液A粘度', '水溶液E', '乳液F粘度']]
+    # 预测黏度和固含量
+    predicted_viscosity = model_v.predict(selected_features_v)[0]
+    predicted_solids = model_s.predict(selected_features_s)[0]
 
-        # scaled_features_v = scaler_v.transform(selected_features_v)
-        # scaled_features_s = scaler_s.transform(selected_features_s)
+    # 计算结果
+    total = (
+        user_input_values['乳液A'] +
+        user_input_values['乳液F'] +
+        water +
+        solution_e +
+        user_input_values['水溶液F'] +
+        user_input_values['其它']
+    )
+    viscosity_difference = abs(predicted_viscosity - expected_viscosity)
+    relative_error = viscosity_difference / expected_viscosity * 100
 
-        predicted_viscosity = model_v.predict(selected_features_v)[0]
-        predicted_solids = model_s.predict(selected_features_s)[0]
+    # 输出优化结果
+    result = {
+        "优化后的水量": water,
+        "优化后的水溶液E量": solution_e,
+        "预测黏度": predicted_viscosity,
+        "预测固含量": predicted_solids,
+        "总计": total,
+        "黏度差": viscosity_difference,
+        "相对误差 (%)": relative_error,
+    }
 
-        total = (
-            user_input['乳液A'] +
-            user_input['乳液F'] + user_input['水溶液F'] +
-            optimized_water +
-            optimized_solution_e +
-            user_input['其它']
-        )
-
-        viscosity_difference = abs(predicted_viscosity - expected_viscosity)
-        relative_error = viscosity_difference / expected_viscosity * 100
-
-        return {
-            "优化后的水量": optimized_water,
-            "优化后的水溶液E量": optimized_solution_e,
-            "预测黏度": predicted_viscosity,
-            "预测固含量": predicted_solids,
-            "总计": total,
-            "黏度差": viscosity_difference,
-            "相对误差 (%)": relative_error,
-        }
-    else:
-        raise ValueError("优化失败，请检查模型或输入值。")
-
+    return result
 
 # Streamlit 界面
 # Streamlit 界面
