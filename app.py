@@ -63,7 +63,7 @@ def optimization_function(individual, *args):
     if total >= input_total:
         total_closeness_penalty = abs(total - input_total)  # 总量偏离输入总量的惩罚
     else:
-        total_closeness_penalty = 10*(input_total - total)  # 总量小于输入总量的惩罚
+        total_closeness_penalty = (input_total - total)  # 总量小于输入总量的惩罚
 
     # 返回目标函数值
     return viscosity_penalty + solids_penalty + viscosity_target_deviation + total_penalty + total_closeness_penalty
