@@ -59,8 +59,15 @@ def optimization_function(individual, *args):
     elif total > total_upper_limit:  # 如果总量大于输入总量+50
         total_penalty = 10*(total - total_upper_limit)
 
+    total_closeness_penalty = 0
+    if total >= input_total:
+        total_closeness_penalty = abs(total - input_total)  # 总量偏离输入总量的惩罚
+    else:
+        total_closeness_penalty = (input_total - total)  # 总量小于输入总量的惩罚
+
     # 返回目标函数值
-    return viscosity_penalty + solids_penalty + viscosity_target_deviation + total_penalty
+    return viscosity_penalty + solids_penalty + viscosity_target_deviation + total_penalty + total_closeness_penalty
+
 
 # 粒子群算法求解
 def run_pso(user_input_values, expected_viscosity):
