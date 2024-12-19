@@ -47,7 +47,17 @@ def optimization_function(individual, *args):
         user_input_values['乳液A'] + user_input_values['乳液F'] + water + solution_e +
         user_input_values['水溶液F'] + user_input_values['其它']
     )
-    total_penalty = max(0, input_total - total)  # 惩罚总量小于输入总量的情况
+
+    # 设定新的约束条件：总量在输入总量到输入总量+50之间
+    total_lower_limit = input_total  # 输入总量下限
+    total_upper_limit = input_total + 50  # 输入总量上限
+
+    # 惩罚总量不在范围内的情况
+    total_penalty = 0
+    if total < total_lower_limit:  # 如果总量小于输入总量
+        total_penalty = total_lower_limit - total
+    elif total > total_upper_limit:  # 如果总量大于输入总量+50
+        total_penalty = total - total_upper_limit
 
     # 返回目标函数值
     return viscosity_penalty + solids_penalty + viscosity_target_deviation + total_penalty
