@@ -26,7 +26,7 @@ def optimization_function(individual, *args):
     user_input['水溶液E'] = solution_e
 
     # 特征选择
-    selected_features_v = user_input[['乳液A粘度', '乳液F粘度', '水溶液E', '水', '乳液A固含量', '乳液F固含量']]
+    selected_features_v = user_input[['乳液A粘度', '乳液F粘度', '水溶液E', '水溶液F', '水', '乳液A固含量', '乳液F固含量']]
     selected_features_s = user_input[['乳液A固含量', '乳液F固含量', '水', '乳液A粘度', '水溶液E', '乳液F粘度']]
 
     # 预测黏度和固含量
