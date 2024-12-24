@@ -65,9 +65,20 @@ def optimization_function(individual, *args):
     else:
         total_closeness_penalty = (input_total - total)  # 总量小于输入总量的惩罚
 
-    # 返回目标函数值
-    return viscosity_penalty + solids_penalty + viscosity_target_deviation + total_penalty + total_closeness_penalty
+        # 新增惩罚：水和水溶液E尽量接近输入值
+    water_penalty = abs(water - user_input_values['水'])
+    solution_e_penalty = abs(solution_e - user_input_values['水溶液E'])
 
+    # 返回目标函数值
+    return (
+            viscosity_penalty +
+            solids_penalty +
+            viscosity_target_deviation +
+            total_penalty +
+            total_closeness_penalty +
+            water_penalty +
+            solution_e_penalty
+    )
 
 # 粒子群算法求解
 def run_pso(user_input_values, expected_viscosity):
