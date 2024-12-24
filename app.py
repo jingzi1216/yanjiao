@@ -101,7 +101,7 @@ def run_pso(user_input_values, expected_viscosity):
 
     # 特征选择
     selected_features_v = pd.DataFrame([user_input_values]).assign(水=water, 水溶液E=solution_e)[
-        ['乳液A粘度', '乳液F粘度', '水溶液E', '水', '乳液A固含量', '乳液F固含量']]
+        ['乳液A粘度', '乳液F粘度', '水溶液E','水溶液F', '水', '乳液A固含量', '乳液F固含量']]
     selected_features_s = pd.DataFrame([user_input_values]).assign(水=water, 水溶液E=solution_e)[
         ['乳液A固含量', '乳液F固含量', '水', '乳液A粘度', '水溶液E', '乳液F粘度']]
 
