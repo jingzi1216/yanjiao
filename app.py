@@ -115,7 +115,8 @@ hide_streamlit_style = """
 st.set_page_config(page_title="粘度优化工具", layout="wide")
 # 页面标题
 st.title("🧪 产品黏度优化工具")
-
+st.markdown("""<style>div[data-testid="stSidebar"] {background-color: #f0f2f6;}</style>""", unsafe_allow_html=True)
+st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 # 页面说明
 st.markdown("""
 本工具用于根据输入的原料和参数，优化产品的水和水溶液E量，从而达到预期的黏度。
