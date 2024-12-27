@@ -1,115 +1,52 @@
 import streamlit as st
-import time
 import pandas as pd
 import joblib
-from pyswarm import pso  # 使用 PySwarm 库中的 PSO 实现
 
 # 加载模型
 model_v = joblib.load('viscosity.pkl')
 model_s = joblib.load('solids.pkl')
 
-# 定义目标函数
-def optimization_function(individual, *args):
-    """
-    PSO 的目标函数
-    individual[0]: 水
-    individual[1]: 水溶液E
-    """
-    expected_viscosity, user_input_values = args
+def adjust_values(user_input_values, expected_viscosity):
+    # 初始化水和水溶液E的值
+    water = user_input_values['水']
+    solution_e = user_input_values['水溶液E']
 
-    # 获取水和水溶液E的值
-    water, solution_e = individual
+    while True:
+        # 检查异常情况
+        if water < 0 or solution_e < 0:
+            raise ValueError("水或水溶液E的值变成负数，程序停止运行。")
+        if water > 100:
+            raise ValueError("水的值超过100，程序停止运行。")
+        if solution_e > 300:
+            raise ValueError("水溶液E的值超过300，程序停止运行。")
 
-    # 修改用户输入
-    user_input = pd.DataFrame([user_input_values])
-    user_input['水'] = water
-    user_input['水溶液E'] = solution_e
+        # 更新用户输入
+        user_input = pd.DataFrame([user_input_values]).assign(水=water, 水溶液E=solution_e)
 
-    # 特征选择
-    selected_features_v = user_input[['乳液A粘度', '乳液F粘度', '水溶液E', '水溶液F', '水', '乳液A固含量', '乳液F固含量']]
-    selected_features_s = user_input[['乳液A固含量', '乳液F固含量', '水', '乳液A粘度', '水溶液E', '乳液F粘度']]
+        # 特征选择
+        selected_features_v = user_input[['乳液A粘度', '乳液F粘度', '水溶液E', '水溶液F', '水', '乳液A固含量', '乳液F固含量']]
+        selected_features_s = user_input[['乳液A固含量', '乳液F固含量', '水', '乳液A粘度', '水溶液E', '乳液F粘度']]
 
-    # 预测黏度和固含量
-    predicted_viscosity = model_v.predict(selected_features_v)[0]
-    predicted_solids = model_s.predict(selected_features_s)[0]
+        # 预测黏度和固含量
+        predicted_viscosity = model_v.predict(selected_features_v)[0]
+        predicted_solids = model_s.predict(selected_features_s)[0]
 
-    # 计算惩罚项
-    viscosity_penalty = max(0, 4500 - predicted_viscosity) + max(0, predicted_viscosity - 5500)
-    viscosity_target_deviation = abs(predicted_viscosity - expected_viscosity)
-    solids_penalty = max(0, 0.50 - predicted_solids) + max(0, predicted_solids - 0.54)
+        # 计算黏度误差
+        viscosity_difference = predicted_viscosity - expected_viscosity
 
-    # 确保总量约束满足
-    input_total = (
-        user_input_values['乳液A'] + user_input_values['乳液F'] + user_input_values['水'] +
-        user_input_values['水溶液E'] + user_input_values['水溶液F'] + user_input_values['其它']
-    )
-    total = (
-        user_input_values['乳液A'] + user_input_values['乳液F'] + water + solution_e +
-        user_input_values['水溶液F'] + user_input_values['其它']
-    )
+        # 判断是否在目标范围内
+        if abs(viscosity_difference) <= 200:
+            break
 
-    # 设定新的约束条件：总量在输入总量到输入总量+50之间
-    total_lower_limit = input_total  # 输入总量下限
-    total_upper_limit = input_total + 50  # 输入总量上限
+        # 根据预测黏度调整水和水溶液E的值
+        if viscosity_difference > 0:  # 黏度过高
+            water += 1
+            solution_e -= 0.5
+        else:  # 黏度过低
+            water -= 1
+            solution_e += 1
 
-    # 惩罚总量不在范围内的情况
-    total_penalty = 0
-    if total < total_lower_limit:  # 如果总量小于输入总量
-        total_penalty = 10*(total_lower_limit - total)
-    elif total > total_upper_limit:  # 如果总量大于输入总量+50
-        total_penalty = 10*(total - total_upper_limit)
-
-    total_closeness_penalty = 0
-    if total >= input_total:
-        total_closeness_penalty = abs(total - input_total)  # 总量偏离输入总量的惩罚
-    else:
-        total_closeness_penalty = (input_total - total)  # 总量小于输入总量的惩罚
-
-        # 新增惩罚：水和水溶液E尽量接近输入值
-    water_penalty = abs(water - user_input_values['水'])
-    solution_e_penalty = abs(solution_e - user_input_values['水溶液E'])
-
-    # 返回目标函数值
-    return (
-            viscosity_penalty +
-            solids_penalty +
-            viscosity_target_deviation +
-            total_penalty +
-            total_closeness_penalty +
-            water_penalty +
-            solution_e_penalty
-    )
-
-# 粒子群算法求解
-def run_pso(user_input_values, expected_viscosity):
-    # 设置变量边界：水和水溶液E的范围
-    lb = [10, 100]  # 下界：水和水溶液E
-    ub = [100, 300]  # 上界：水和水溶液E
-
-    # 运行 PSO 算法
-    optimal_solution, fopt = pso(
-        optimization_function,
-        lb,
-        ub,
-        args=(expected_viscosity, user_input_values),
-        swarmsize=50,  # 粒子群的大小
-        maxiter=30     # 最大迭代次数
-    )
-
-    # 获取优化结果
-    water, solution_e = optimal_solution
-
-    # 特征选择
-    selected_features_v = pd.DataFrame([user_input_values]).assign(水=water, 水溶液E=solution_e)[
-        ['乳液A粘度', '乳液F粘度', '水溶液E','水溶液F', '水', '乳液A固含量', '乳液F固含量']]
-    selected_features_s = pd.DataFrame([user_input_values]).assign(水=water, 水溶液E=solution_e)[
-        ['乳液A固含量', '乳液F固含量', '水', '乳液A粘度', '水溶液E', '乳液F粘度']]
-
-    # 预测黏度和固含量
-    predicted_viscosity = model_v.predict(selected_features_v)[0]
-    predicted_solids = model_s.predict(selected_features_s)[0]
-
-    # 计算结果
+    # 计算总量
     total = (
         user_input_values['乳液A'] +
         user_input_values['乳液F'] +
@@ -118,8 +55,9 @@ def run_pso(user_input_values, expected_viscosity):
         user_input_values['水溶液F'] +
         user_input_values['其它']
     )
-    viscosity_difference = abs(predicted_viscosity - expected_viscosity)
-    relative_error = viscosity_difference / expected_viscosity * 100
+
+    # 计算相对误差
+    relative_error = abs(viscosity_difference) / expected_viscosity * 100
 
     # 输出优化结果
     result = {
@@ -128,7 +66,7 @@ def run_pso(user_input_values, expected_viscosity):
         "预测黏度": predicted_viscosity,
         "预测固含量": predicted_solids,
         "总计": total,
-        "黏度差": viscosity_difference,
+        "黏度差": abs(viscosity_difference),
         "相对误差 (%)": relative_error,
     }
 
@@ -174,7 +112,7 @@ if st.sidebar.button("🚀 确认"):
 
     with st.spinner("⏳ 正在加载，请稍候..."):
         try:
-            result = run_pso(user_input_values, 预期黏度)
+            result = adjust_values(user_input_values, 预期黏度)
             st.subheader("✨ 优化结果")
             st.success("优化成功！以下是结果：")
             col1, col2 = st.columns(2)
