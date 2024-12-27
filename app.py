@@ -17,13 +17,27 @@ def calculate_proportional_values(fixed_total,total_value):
 
     proportional_values = {}
     for key, value in fixed_values.items():
-        if key in ['乳液A', '乳液F','水','水溶液E', '水溶液F']:
+        if key in ['乳液A', '乳液F', '水溶液F']:
             proportional_values[key] = round(value * remaining_total)
         else:
             proportional_values[key] = round(value * remaining_total, 2)
 
     return proportional_values
 
+
+def find_closest_water_solution_e(input_features):
+    feature_columns = ['乳液A', '乳液A粘度', '乳液A固含量',
+                       '乳液F', '乳液F粘度', '乳液F固含量',
+                       '水溶液E固含量', '水溶液F', '水溶液F固含量',
+                       '其它', '其他固含量']
+
+    feature_data = excel_data[feature_columns]
+
+    distances = feature_data.apply(lambda row: distance.euclidean(row, input_features), axis=1)
+    closest_index = distances.idxmin()
+
+    closest_row = excel_data.loc[closest_index]
+    return closest_row['水'], closest_row['水溶液E']
 
 
 def adjust_values(user_input_values, expected_viscosity):
@@ -32,11 +46,11 @@ def adjust_values(user_input_values, expected_viscosity):
 
     while True:
         if water < 0 or solution_e < 0:
-            raise ValueError("水或水溶液E的值变成负数，求解失败，请检查数据")
+            raise ValueError("水或水溶液E的值变成负数，程序停止运行。")
         if water > 100:
-            raise ValueError("水的值超出范围，求解失败，请检查数据")
+            raise ValueError("水的值超过100，程序停止运行。")
         if solution_e > 300:
-            raise ValueError("水溶液E的值超出范围，求解失败，请检查数据")
+            raise ValueError("水溶液E的值超过300，程序停止运行。")
 
         user_input = pd.DataFrame([user_input_values]).assign(水=water, 水溶液E=solution_e)
 
@@ -134,7 +148,7 @@ with input_columns[1]:
     其他固含量 = st.number_input("其他固含量", min_value=0.0, max_value=1.0, value=0.85, step=0.001)
 
 # 预计的黏度
-user_input_total = st.number_input("需求总计", min_value=0.0, max_value=10000.0, value=3971.53,
+user_input_total = st.number_input("需求总计", min_value=0.0, max_value=10000.0, value=4163.77,
                                        step=0.01)
 expected_viscosity = st.number_input("预计的黏度", min_value=0, value=5000)
 
@@ -145,8 +159,6 @@ if st.button("开始优化"):
     fixed_values = {
         '乳液A': 配方_乳液A,
         '乳液F': 配方_乳液F,
-        '水':配方_水,
-        '水溶液E':配方_水溶液E,
         '水溶液F': 配方_水溶液F,
         '其它': 配方_其他
     }
@@ -165,10 +177,14 @@ if st.button("开始优化"):
     # 合并所有特征
     user_input_features.update(proportional_values)
 
+    # 根据输入特征查找最接近的水和水溶液E
+    closest_water, closest_solution_e = find_closest_water_solution_e(
+        [user_input_features[col] for col in ['乳液A', '乳液A粘度', '乳液A固含量', '乳液F', '乳液F粘度', '乳液F固含量',
+                                              '水溶液E固含量', '水溶液F', '水溶液F固含量', '其它', '其他固含量']])
 
     # 合并结果并调用 adjust_values
-    user_input_values = {**user_input_features}
-
+    user_input_values = {**user_input_features, '水': closest_water, '水溶液E': closest_solution_e}
+    optimized_result = adjust_values(user_input_values, expected_viscosity)
 
     with st.spinner("⏳ 正在加载，请稍候..."):
         try:
