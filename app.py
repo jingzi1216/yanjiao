@@ -139,10 +139,10 @@ with input_columns[0]:
 with input_columns[1]:
     st.subheader("2. 输入材料数据")
     乳液A粘度 = st.number_input("乳液A粘度", min_value=0, value=3230)
-    乳液A固含量 = st.number_input("乳液A固含量", min_value=0.0, max_value=1.0, value=0.556, step=0.001)
+    乳液A固含量 = st.number_input("乳液A固含量", min_value=0.000, max_value=1.000, value=0.556, step=0.001)
 
     乳液F粘度 = st.number_input("乳液F粘度", min_value=0, value=4410)
-    乳液F固含量 = st.number_input("乳液F固含量", min_value=0.0, max_value=1.0, value=0.607, step=0.001)
+    乳液F固含量 = st.number_input("乳液F固含量", min_value=0.000, max_value=1.0000, value=0.607, step=0.001)
     水溶液E固含量 = st.number_input("水溶液E固含量", min_value=0.0, max_value=1.0, value=0.2, step=0.001)
     水溶液F固含量 = st.number_input("水溶液F固含量", min_value=0.0, max_value=1.0, value=0.2, step=0.001)
     其他固含量 = st.number_input("其他固含量", min_value=0.0, max_value=1.0, value=0.85, step=0.001)
